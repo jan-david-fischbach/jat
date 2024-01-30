@@ -3,6 +3,8 @@ import pytest
 import scipy.special as ssc
 
 import treams.special as sc
+import treams.special as ts
+import treams.jspecial as tsj
 import treams.special.cython_special as cs
 
 
@@ -264,6 +266,23 @@ class TestJv:
 
     def test_complex(self):
         assert sc.jv(1, 3 + 1j) == ssc.jv(1, 3 + 1j)
+
+class TestSpericalJn_JAX:
+    def test_real(self):
+        assert ts.spherical_jn(1, 3) == tsj.spherical_jn(1, 3)
+
+    def test_complex(self):
+        assert ts.spherical_jn(1, 3 + 1j) == tsj.spherical_jn(1, 3 + 1j)
+
+    def test_speed_real(self):
+        import timeit
+        
+        time_ts  = timeit.timeit("ts.spherical_jn(1, np.linspace(1,2,10000))", "import treams.special as ts",  number = 10000)
+        time_tsj = timeit.timeit("tsj.spherical_jn(1, np.linspace(1,2,10000))", "import treams.jspecial as tsj", number = 10000)
+        time_scs = timeit.timeit("scs.spherical_jn(1, np.linspace(1,2,10000))", "import scipy.special as scs", number = 10000)
+        assert time_ts < time_scs
+        assert 10 * time_ts > time_tsj
+
 
 
 class TestSpericalJn:
