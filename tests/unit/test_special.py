@@ -277,9 +277,9 @@ class TestSpericalJn_JAX:
     def test_speed_real(self):
         import timeit
         
-        time_ts  = timeit.timeit("ts.spherical_jn(1, np.linspace(1,2,10000))", "import treams.special as ts",  number = 10000)
-        time_tsj = timeit.timeit("tsj.spherical_jn(1, np.linspace(1,2,10000))", "import treams.jspecial as tsj", number = 10000)
-        time_scs = timeit.timeit("scs.spherical_jn(1, np.linspace(1,2,10000))", "import scipy.special as scs", number = 10000)
+        time_ts  = timeit.timeit("ts.spherical_jn(1, 2)", "import treams.special as ts",  number = 10000)
+        time_tsj = timeit.timeit("tsj.spherical_jv(1, jnp.array(2.0))", "import treams.jspecial as tsj; import jax.numpy as jnp", number = 10000)
+        time_scs = timeit.timeit("scs.spherical_jn(1, 2)", "import scipy.special as scs", number = 10000)
         assert time_ts < time_scs
         assert 10 * time_ts > time_tsj
 

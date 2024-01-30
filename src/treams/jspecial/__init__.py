@@ -191,12 +191,18 @@ Cython module
 
    cython_special
 """
+from jax import config
+config.update("jax_enable_x64", True)
+
 from treams.jspecial.bessel import ( # noqa: F401
-   spherical_jn,
-   spherical_yn,
-   spherical_h1,
-   spherical_h2,
-   bessel_jn
+   spherical_jv,
+   spherical_yv,
+   spherical_hankel1,
+   spherical_hankel2,
+   hankel1,
+   hankel2,
+   jv,
+   yv
 )
 
 from treams.special import _gufuncs, _ufuncs  # noqa: F401
