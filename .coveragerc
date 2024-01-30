@@ -1,0 +1,7 @@
+[report]
+exclude_lines =
+    @abc.abstractmethod
+
+[run]
+plugins = Cython.Coverage
+omit = src/treams/ebcm.py

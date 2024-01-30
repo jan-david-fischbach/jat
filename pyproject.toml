@@ -1,0 +1,24 @@
+[build-system]
+requires = [
+    "setuptools",
+    "wheel",
+    "Cython",
+    "oldest-supported-numpy",
+    "scipy>=1.6",
+    "setuptools_scm>=6.2"
+]
+build-backend = "setuptools.build_meta"
+
+[tool.isort]
+profile = "black"
+
+[tool.setuptools_scm]
+
+[tool.pylint.messages_control]
+extension-pkg-whitelist = "treams"
+
+[tool.cibuildwheel]
+archs = ["auto64"]
+skip = ["pp*", "*musllinux*"]
+test-command = "python -m pytest {project}/tests/unit"
+test-extras = ["test", "io"]
