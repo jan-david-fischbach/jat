@@ -10,12 +10,15 @@ def generate_bessel(function):
 
     @custom_jvp
     def cv(v, x):
-        return pure_callback(
+        mask = x==0
+        x = jnp.where(mask, 1, x)
+        res = pure_callback(
             lambda vx: function(*vx),
             x,
             (v, x),
             vectorized=True,
         )
+        return jnp.where(mask, 0, res)
 
     @cv.defjvp
     def cv_jvp(primals, tangents):
@@ -37,7 +40,7 @@ def generate_bessel(function):
 
         tangents_out = jnp.where(jnp.abs(x)<1e-30, 0, tangents_out*dx)
 
-        jax.debug.print("dx")
+        #jax.debug.print("dx {}", dx)
 
         return primal_out, tangents_out
 
