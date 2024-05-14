@@ -1297,7 +1297,9 @@ def _cw_efield(r, basis, k0, material, modetype, poltype):
     material = Material(material)
     ks = material.ks(k0)[basis.pol]
     krhos = material.krhos(k0, basis.kz, basis.pol)
-    krhos[krhos.imag < 0] = -krhos[krhos.imag < 0]
+    #krhos[krhos.imag < 0] = -krhos[krhos.imag < 0] 
+    #NOTE this hinders exploding fields
+    #TODO JD investigate implications of leaving this out
     poltype = config.POLTYPE if poltype is None else poltype
     rcyl = sc.car2cyl(r - basis.positions)
     res = None
@@ -1408,6 +1410,7 @@ def efield(r, *, basis, k0, material=Material(), modetype=None, poltype=None):
         return _sw_efield(r, basis, k0, material, modetype, poltype).swapaxes(-1, -2)
     if isinstance(basis, core.CylindricalWaveBasis):
         modetype = "regular" if modetype is None else modetype
+        print(k0.imag)
         return _cw_efield(r, basis, k0, material, modetype, poltype).swapaxes(-1, -2)
     if isinstance(basis, core.PlaneWaveBasis):
         if isinstance(basis, core.PlaneWaveBasisByComp):
