@@ -1341,6 +1341,12 @@ def _cw_efield(r, basis, k0, material, modetype, poltype):
                 ks,
             )
         elif modetype == "singular":
+            # print("calculating singular")
+            # print(rcyl[..., basis.pidx, 0].shape)
+            # print(basis.kz.shape)
+            # import time
+            # start = time.time()
+
             res = (1 - basis.pol[:, None]) * sc.vcw_M(
                 basis.kz,
                 basis.m,
@@ -1355,6 +1361,7 @@ def _cw_efield(r, basis, k0, material, modetype, poltype):
                 rcyl[..., basis.pidx, 2],
                 ks,
             )
+            # print(f"done: took {time.time()-start}s")
     if res is None:
         raise ValueError("invalid parameters")
     res = util.AnnotatedArray(sc.vcyl2car(res, rcyl[..., basis.pidx, :]))
@@ -1410,7 +1417,7 @@ def efield(r, *, basis, k0, material=Material(), modetype=None, poltype=None):
         return _sw_efield(r, basis, k0, material, modetype, poltype).swapaxes(-1, -2)
     if isinstance(basis, core.CylindricalWaveBasis):
         modetype = "regular" if modetype is None else modetype
-        print(k0.imag)
+        # print(k0.imag)
         return _cw_efield(r, basis, k0, material, modetype, poltype).swapaxes(-1, -2)
     if isinstance(basis, core.PlaneWaveBasis):
         if isinstance(basis, core.PlaneWaveBasisByComp):
