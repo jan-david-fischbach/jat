@@ -77,9 +77,7 @@ def globfromloc(tlocal, positions, mmax, kzs, k0, num, material, pol_filter=None
 
 def krhos(k0, kz, pol, material):
     ks = k0 * material.nmp[pol]
-    if kz==0:
-        return k0
-    return np.sqrt(ks * ks - kz * kz)
+    return np.where(kz == 0, ks, np.sqrt(ks * ks - kz * kz))
 
 
 def defaultmodes(mmax, kzs, nmax=1):
