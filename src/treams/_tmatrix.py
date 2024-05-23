@@ -593,7 +593,10 @@ class TMatrixC(PhysicsArray):
                 raise ValueError("global basis required")
         positions = np.array(positions)
         if len(tmats) < positions.shape[0]:
-            warnings.warn("specified more positions than T-matrices")
+            warnings.warn(
+                f"specified more positions ({positions.shape[0]})"
+                f" than T-matrices ({len(tmats)})"
+            )
         elif len(tmats) > positions.shape[0]:
             raise ValueError(
                 f"'{len(tmats)}' T-matrices "
