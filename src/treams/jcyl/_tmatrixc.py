@@ -2,24 +2,25 @@
 Cylindrical TMAT patch 
 """
 import jax.numpy as np
+import numpy as onp
 import jax
 import treams.jcyl.cw as cw
 import treams
 from functools import partial
 
 
-def globalt(mmax, kzs, k0, radii, positions, materials, pol_filter):
+def globalt(mmax, kzs, k0, radii, positions, materials, pol_mask):
     num = radii.shape[0]
 
     size = num*(1+2*mmax)*2
-    shape_dtype = jax.ShapeDtypeStruct((size, size), complex)
-    epsilons = [mat.epsilon for mat in materials]
 
+    epsilons = [mat.epsilon for mat in materials]
+    shape_dtype = jax.ShapeDtypeStruct((size, size), complex)
     tlocal = jax.pure_callback(localt, shape_dtype, mmax, kzs, k0, radii, epsilons)
-    #tlocal = localt(mmax, kzs, k0, radii, materials)
+    #tlocal = localt(mmax, kzs, k0, radii, epsilons)
     #jax.debug.print("tlocal: {}", tlocal)
     globalt, modes2, positions = globfromloc(
-        tlocal, positions, mmax, kzs, k0, num, materials[-1], pol_filter=pol_filter
+        tlocal, positions, mmax, kzs, k0, num, materials[-1], pol_mask=pol_mask
     )
 
     return globalt, modes2, positions
@@ -55,23 +56,18 @@ def filter_modes(modes, tmat, pol_filter):
 
     return modes, tmat
 
-def globfromloc(tlocal, positions, mmax, kzs, k0, num, material, pol_filter=None):
+def globfromloc(tlocal, positions, mmax, kzs, k0, num, material, pol_mask=None):
     modes = defaultmodes(mmax, kzs, num)
     positions = np.array(positions).T
     ind = positions[:, None, :] - positions
     rs = np.array(cw.car2cyl(*ind.T)).T
     rs = np.array(rs)
     # kn = k0 * material.n
-    if pol_filter is not None:
-        size_filtered = num*(1+2*mmax)
-        shape_tmat = jax.ShapeDtypeStruct((size_filtered, size_filtered), complex)
-        shape_modes = [modes[0]]*size_filtered
-        modes, tlocal = jax.pure_callback(filter_modes, 
-                                          (shape_tmat, shape_modes), 
-                                          modes, tlocal, pol_filter
-        )
-    pidx, kz, m, pol = modes #pol not considered yet...
 
+    if pol_mask is not None:
+        modes = onp.array(modes)[:, pol_mask]
+        tlocal = tlocal[pol_mask][:, pol_mask]
+    pidx, kz, m, pol = modes
     krho = krhos(k0, kz, pol, material) #TODO diffable
 
     translation = cw.translate(
@@ -83,15 +79,17 @@ def globfromloc(tlocal, positions, mmax, kzs, k0, num, material, pol_filter=None
         singular=True,
     )
     translation = np.where(krho * rs[pidx[:, None], pidx, 0] != 0, translation, 0)
-    #jax.debug.print("translation: {}", translation)
+
+    B = tlocal @ np.reshape(translation, tlocal.shape)
+    A = np.eye(tlocal.shape[0]) - B
 
     finalt = np.linalg.solve(
-        np.eye(tlocal.shape[0]) - tlocal @ np.reshape(translation, tlocal.shape),
+        A,
         tlocal,
     )
     return finalt, tuple(modes), positions
 
-def krhos(k0, kz, pol, material):
+def krhos(k0, kz, pol, material:treams.Material):
     ks = k0 * material.nmp[pol]
     return np.where(kz == 0, ks, np.sqrt(ks * ks - kz * kz))
 
@@ -111,7 +109,7 @@ def defaultmodes(mmax, kzs, nmax=1):
         tuple
     """
     return (
-        *np.array(
+        *onp.array(
             [
                 [n, kz, m, p]
                 for n in range(0, nmax)
