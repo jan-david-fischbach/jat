@@ -5,11 +5,18 @@ import jax.numpy as np
 import jax
 import treams.jcyl.cw as cw
 import treams
+from functools import partial
 
 
 def globalt(mmax, kzs, k0, radii, positions, materials, pol_filter):
     num = radii.shape[0]
-    tlocal = localt(mmax, kzs, k0, radii, materials)
+
+    size = num*(1+2*mmax)*2
+    shape_dtype = jax.ShapeDtypeStruct((size, size), complex)
+    epsilons = [mat.epsilon for mat in materials]
+
+    tlocal = jax.pure_callback(localt, shape_dtype, mmax, kzs, k0, radii, epsilons)
+    #tlocal = localt(mmax, kzs, k0, radii, materials)
     #jax.debug.print("tlocal: {}", tlocal)
     globalt, modes2, positions = globfromloc(
         tlocal, positions, mmax, kzs, k0, num, materials[-1], pol_filter=pol_filter
@@ -21,12 +28,13 @@ def cylinder(mmax, kzs, k0, rad, materials):
     #jax.debug.print("mmax: {}", mmax)
     #jax.debug.print("k0: {}", k0)
     #jax.debug.print("rad: {}", rad)
-    cyl = treams.TMatrixC.cylinder(kzs, mmax, complex(k0), [rad], materials)
+    cyl = treams.TMatrixC.cylinder(kzs, mmax, k0.astype(complex), [rad], materials)
     cyl = cyl.changepoltype("parity")
     return np.array(cyl)
 
 
-def localt(mmax, kzs, k0, radii, materials):
+def localt(mmax, kzs, k0, radii, epsilons):
+    materials = [treams.Material(eps) for eps in epsilons]
     num = radii.shape[0]
     mycyl = cylinder(mmax, kzs, k0, radii[0], materials)
     shape = mycyl.shape[0]
@@ -40,21 +48,29 @@ def localt(mmax, kzs, k0, radii, materials):
     tlocal = np.vstack(tuple(np.split(mycyl, num, axis=1)))
     return tlocal
 
+def filter_modes(modes, tmat, pol_filter):
+    mask = modes[3] == pol_filter
+    modes = np.array(modes)[:, mask]
+    tmat = tmat[mask][:, mask]
+
+    return modes, tmat
+
 def globfromloc(tlocal, positions, mmax, kzs, k0, num, material, pol_filter=None):
     modes = defaultmodes(mmax, kzs, num)
     positions = np.array(positions).T
     ind = positions[:, None, :] - positions
     rs = np.array(cw.car2cyl(*ind.T)).T
     rs = np.array(rs)
-    kn = k0 * material.n
-    pidx, kz, m, pol = modes #pol not considered yet...
+    # kn = k0 * material.n
     if pol_filter is not None:
-        mask = pol == pol_filter
-        modes = np.array(modes)[:, mask]
-        pidx, kz, m, pol = modes
-        #jax.debug.print("tlocal.shape: {}", tlocal.shape)
-        tlocal = tlocal[mask][:, mask]
-        #jax.debug.print("tlocal.shape: {}", tlocal.shape)
+        size_filtered = num*(1+2*mmax)
+        shape_tmat = jax.ShapeDtypeStruct((size_filtered, size_filtered), complex)
+        shape_modes = [modes[0]]*size_filtered
+        modes, tlocal = jax.pure_callback(filter_modes, 
+                                          (shape_tmat, shape_modes), 
+                                          modes, tlocal, pol_filter
+        )
+    pidx, kz, m, pol = modes #pol not considered yet...
 
     krho = krhos(k0, kz, pol, material) #TODO diffable
 
