@@ -1101,7 +1101,7 @@ def _raise_basis_error(*args):
     raise TypeError("'basis' must be BasisSet")
 
 def to_float_or_complex(k0):
-    if np.iscomplex(k0):
+    if np.iscomplexobj(k0):
         return complex(k0)
     return float(k0)
 
