@@ -1100,6 +1100,11 @@ class PlaneWaveBasisByComp(PlaneWaveBasis):
 def _raise_basis_error(*args):
     raise TypeError("'basis' must be BasisSet")
 
+def to_float_or_complex(k0):
+    if np.iscomplexobj(k0):
+        return complex(k0)
+    return float(k0)
+
 
 class PhysicsDict(util.AnnotationDict):
     """Physics dictionary.
@@ -1130,7 +1135,7 @@ class PhysicsDict(util.AnnotationDict):
         "k0": (
             "Wave number.", 
             lambda x: isinstance(x, float) or isinstance(x, complex), 
-            float
+            to_float_or_complex
         ),
         "kpar": (
             "Wave vector components tangential to the lattice.",
