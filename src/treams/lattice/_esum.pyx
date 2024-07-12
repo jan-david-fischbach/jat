@@ -32,6 +32,7 @@ cdef extern from "<complex.h>" nogil:
     """
     double complex CMPLX(double, double)
     double cabs(double complex z)
+    double carg(double complex z)
     double complex cexp(double complex z)
     double cimag(double complex z)
     double complex cpow(double complex x, double complex y)
@@ -55,6 +56,11 @@ cdef number_t _check_eta(number_t eta, number_t k, double *a, long ds, long dl) 
         res *= 0.125 / absres
     return res * sqrtd(2 * pi)
 
+cdef double complex angled_cpow(double complex base, double exponent, double branch_angle) nogil:
+    cdef int sheet = (carg(base)>branch_angle)-1
+    cdef double complex sheet_phase = cexp(CMPLX(0, 2*pi*sheet*exponent))
+    
+    return cpow(base,exponent) * sheet_phase
 
 cdef double complex _redincgamma(double n, double complex z) nogil:
     r"""
@@ -93,7 +99,7 @@ cdef double complex _redincgamma(double n, double complex z) nogil:
         return res - cpow(-1.0j, 2 * n) / n
     if cimag(z) == 0:
         z = CMPLX(creal(z), -0.0)
-    return sc.incgamma(n, z) / cpow(-z, n)
+    return sc.incgamma(n, z) / angled_cpow(-z, n, -pi*0.5)
 
 
 cdef double complex _redintkambe(double n, double complex val, double complex krzeta) nogil:
@@ -287,6 +293,8 @@ cdef double complex _recsw2d(long l, long m, number_t beta, double phi, number_t
     )
     cdef number_t mult = 2 * eta * eta / (beta * beta)
     cdef long n
+    # with gil:
+    #     print("using _redincgamma")
     for n in range((l - labs(m)) // 2 + 1):
         res += macc * _redincgamma(0.5 - n, val)
         macc *= mult * ((l + m) // 2 - n) * ((l - m) // 2 - n) / <double>(n + 1)

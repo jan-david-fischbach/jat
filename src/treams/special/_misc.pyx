@@ -10,6 +10,7 @@ from libc.math cimport sqrt as sqrtd
 
 cdef extern from "<complex.h>" nogil:
     double cabs(double complex z)
+    double carg(double complex z)
     double complex ccos(double complex z)
     double complex cexp(double complex z)
     double complex cpow(double complex x, double complex y)
@@ -66,6 +67,13 @@ cdef double abs(number_t x) nogil:
         return fabs(x)
     elif number_t is double_complex:
         return cabs(x)
+
+cdef double arg(number_t x) nogil:
+    """Fused type version of arg"""
+    if number_t is double:
+        return 0 if x>=0 else pi
+    elif number_t is double_complex:
+        return carg(x)
 
 
 cdef long minusonepow(long l) nogil:
