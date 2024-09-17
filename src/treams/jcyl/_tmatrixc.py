@@ -8,45 +8,36 @@ import treams.jcyl.cw as cw
 import treams
 from functools import partial
 
+@partial(jax.jit, static_argnames=["mmax", "pol_mask"])
+def globalt(mmax, kzs, k0, radius, positions, epsilons, pol_mask):
+    num = positions.shape[1]
 
-def globalt(mmax, kzs, k0, radii, positions, materials, pol_mask):
-    num = radii.shape[0]
-
-    size = num*(1+2*mmax)*2
-
-    epsilons = [mat.epsilon for mat in materials]
-    shape_dtype = jax.ShapeDtypeStruct((size, size), complex)
-    tlocal = jax.pure_callback(localt, shape_dtype, mmax, kzs, k0, radii, epsilons)
+    tlocal = localt(mmax, kzs, k0, radius, num, epsilons)
     #tlocal = localt(mmax, kzs, k0, radii, epsilons)
     #jax.debug.print("tlocal: {}", tlocal)
     globalt, modes2, positions = globfromloc(
-        tlocal, positions, mmax, kzs, k0, num, materials[-1], pol_mask=pol_mask
+        tlocal, positions, mmax, kzs, k0, num, treams.Material(epsilons[-1]), pol_mask
     )
 
     return globalt, modes2, positions
 
-def cylinder(mmax, kzs, k0, rad, materials):
-    #jax.debug.print("mmax: {}", mmax)
-    #jax.debug.print("k0: {}", k0)
-    #jax.debug.print("rad: {}", rad)
+def _cb_cylinder(mmax, kzs, k0, rad, epsilons):
+    materials = [treams.Material(eps) for eps in epsilons]
     cyl = treams.TMatrixC.cylinder(kzs, mmax, k0.astype(complex), [rad], materials)
     cyl = cyl.changepoltype("parity")
     return np.array(cyl)
 
+def cylinder(mmax, kzs, k0, rad, epsilons):
+    size = (1+2*mmax)*2
+    shape_dtype = jax.ShapeDtypeStruct((size, size), complex)
+    return jax.pure_callback(_cb_cylinder, shape_dtype, mmax, kzs, k0, rad, epsilons)
 
-def localt(mmax, kzs, k0, radii, epsilons):
-    materials = [treams.Material(eps) for eps in epsilons]
-    num = radii.shape[0]
-    mycyl = cylinder(mmax, kzs, k0, radii[0], materials)
-    shape = mycyl.shape[0]
-
-    for i in range(1, num):
-        nextcyl= cylinder(mmax, kzs, k0, radii[i], materials)
-        mycyl = np.concatenate(
-            (mycyl, np.zeros((shape, num * shape)), nextcyl), axis=1
-        )
-
-    tlocal = np.vstack(tuple(np.split(mycyl, num, axis=1)))
+@partial(jax.vmap, in_axes=(None, None, 0, None, None, None))
+@partial(jax.jit, static_argnames=["mmax", "num"])
+def localt(mmax, kzs, k0, radius, num, epsilons):
+    tlocal = jax.scipy.linalg.block_diag(
+        *[cylinder(mmax, kzs, k0, radius, epsilons)]*num
+    )
     return tlocal
 
 def filter_modes(modes, tmat, pol_filter):
@@ -56,7 +47,8 @@ def filter_modes(modes, tmat, pol_filter):
 
     return modes, tmat
 
-def globfromloc(tlocal, positions, mmax, kzs, k0, num, material, pol_mask=None):
+@partial(jax.vmap, in_axes=(0, None, None, None, 0, None, None, None))
+def globfromloc(tlocal, positions, mmax, kzs, k0, num, material, pol_mask):
     modes = defaultmodes(mmax, kzs, num)
     positions = np.array(positions).T
     ind = positions[:, None, :] - positions
@@ -65,7 +57,7 @@ def globfromloc(tlocal, positions, mmax, kzs, k0, num, material, pol_mask=None):
     # kn = k0 * material.n
 
     if pol_mask is not None:
-        modes = onp.array(modes)[:, pol_mask]
+        modes = np.array(modes)[:, pol_mask]
         tlocal = tlocal[pol_mask][:, pol_mask]
     pidx, kz, m, pol = modes
     krho = krhos(k0, kz, pol, material) #TODO diffable
@@ -78,6 +70,7 @@ def globfromloc(tlocal, positions, mmax, kzs, k0, num, material, pol_mask=None):
         rs[pidx[:, None], pidx, 2],
         singular=True,
     )
+    
     translation = np.where(krho * rs[pidx[:, None], pidx, 0] != 0, translation, 0)
 
     B = tlocal @ np.reshape(translation, tlocal.shape)
@@ -89,8 +82,15 @@ def globfromloc(tlocal, positions, mmax, kzs, k0, num, material, pol_mask=None):
     )
     return finalt, tuple(modes), positions
 
+def refractive_index(epsilon, mu, kappa):
+    epsilon = np.array(epsilon)
+    n = np.sqrt(epsilon * mu)
+    res = np.stack((n - kappa, n + kappa), axis=-1)
+    res = res*np.where(np.imag(res) < 0, -1, 1)
+    return res
+
 def krhos(k0, kz, pol, material:treams.Material):
-    ks = k0 * material.nmp[pol]
+    ks = k0 * refractive_index(material.epsilon, material.mu, material.kappa)[pol]
     return np.where(kz == 0, ks, np.sqrt(ks * ks - kz * kz))
 
 
@@ -108,14 +108,10 @@ def defaultmodes(mmax, kzs, nmax=1):
     Returns:
         tuple
     """
-    return (
-        *onp.array(
-            [
-                [n, kz, m, p]
-                for n in range(0, nmax)
-                for kz in kzs
-                for m in range(-mmax, mmax+1)
-                for p in range(1, -1, -1)
-            ]
-        ).T,
-    )
+
+    n = np.arange(0, nmax)
+    kz = np.array(kzs)
+    m = np.arange(-mmax, mmax+1)
+    p = np.array([1, 0])
+    modes = np.array(np.meshgrid(n, kz, m, p))
+    return modes.reshape(4, -1)

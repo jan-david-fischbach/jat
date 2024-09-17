@@ -57,6 +57,9 @@ cdef number_t _check_eta(number_t eta, number_t k, double *a, long ds, long dl) 
     return res * sqrtd(2 * pi)
 
 cdef double complex angled_cpow(double complex base, double exponent, double branch_angle) nogil:
+    r"""
+    Complex powers with with a user specified branch cut (specified by its angle)
+    """
     cdef int sheet = (carg(base)>branch_angle)-1
     cdef double complex sheet_phase = cexp(CMPLX(0, 2*pi*sheet*exponent))
     
