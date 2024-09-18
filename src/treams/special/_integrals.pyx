@@ -29,15 +29,15 @@ cdef number_t incgamma(double n, number_t z) nogil:
 
         \Gamma(n, z) = \int_z^\infty t^{n - 1} \mathrm e^{-t} \mathrm dt
 
-    The branch gut is chosen to lie on the positive imaginary axis.
+    The branch cut is chosen to lie on the positive imaginary axis.
 
     References:
         - `DLMF: 8.2 <https://dlmf.nist.gov/8.2>`
     """
     if number_t is double:
         return unshifted_incgamma(n, z)
-
-    cdef float angle = PI/2 # angle of the branch cut
+    
+    cdef float angle = 0.5*PI #default: PI/2 angle of the branch cut
     cdef int sheet = (arg(z)>angle) #-1 for -PI/2 bc
     cdef double complex sheet_phase = cexp(CMPLX(0,2*PI*sheet*n))
     return sheet_phase*unshifted_incgamma(n, z)+(1-sheet_phase)*cs.gamma(n) # Based on DLMF: 8.2.9 <https://dlmf.nist.gov/8.2>
