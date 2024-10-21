@@ -8,6 +8,7 @@ from libc.stdlib cimport free, labs, malloc
 from numpy.math cimport INFINITY, NAN, PI
 
 from treams.special._misc cimport SQPI, double_complex, exp, pow, sqrt, arg
+cimport treams.config
 
 
 cdef extern from "<complex.h>" nogil:
@@ -37,7 +38,7 @@ cdef number_t incgamma(double n, number_t z) nogil:
     if number_t is double:
         return unshifted_incgamma(n, z)
     
-    cdef float angle = 0.5*PI #default: PI/2 angle of the branch cut
+    cdef float angle = treams.config.BRANCH_CUT_INCGAMMA #default: PI/2 angle of the branch cut
     cdef int sheet = (arg(z)>angle) #-1 for -PI/2 bc
     cdef double complex sheet_phase = cexp(CMPLX(0,2*PI*sheet*n))
     return sheet_phase*unshifted_incgamma(n, z)+(1-sheet_phase)*cs.gamma(n) # Based on DLMF: 8.2.9 <https://dlmf.nist.gov/8.2>

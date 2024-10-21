@@ -8,6 +8,7 @@ from numpy.math cimport EULER
 from scipy.linalg.cython_blas cimport daxpy, ddot, dgemv, dscal
 
 cimport treams.special.cython_special as sc
+cimport treams.config
 from treams.lattice cimport _misc
 from treams.special._misc cimport (
     SQPI,
@@ -19,6 +20,7 @@ from treams.special._misc cimport (
     minusonepow,
     pow,
     sqrt,
+    angled_cpow
 )
 
 
@@ -55,12 +57,6 @@ cdef number_t _check_eta(number_t eta, number_t k, double *a, long ds, long dl) 
     if absres < 0.125:
         res *= 0.125 / absres
     return res * sqrtd(2 * pi)
-
-cdef double complex angled_cpow(double complex base, double exponent, double branch_angle) nogil:
-    cdef int sheet = (carg(base)>branch_angle)-1
-    cdef double complex sheet_phase = cexp(CMPLX(0, 2*pi*sheet*exponent))
-    
-    return cpow(base,exponent) * sheet_phase
 
 cdef double complex _redincgamma(double n, double complex z) nogil:
     r"""
@@ -99,7 +95,7 @@ cdef double complex _redincgamma(double n, double complex z) nogil:
         return res - cpow(-1.0j, 2 * n) / n
     if cimag(z) == 0:
         z = CMPLX(creal(z), -0.0)
-    return sc.incgamma(n, z) / angled_cpow(-z, n, -pi*0.5)
+    return sc.incgamma(n, z) / angled_cpow(-z, n, treams.config.BRANCH_CUT_CPOW)
 
 
 cdef double complex _redintkambe(double n, double complex val, double complex krzeta) nogil:

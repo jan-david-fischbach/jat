@@ -9,6 +9,7 @@ from libc.math cimport sqrt as sqrtd
 
 
 cdef extern from "<complex.h>" nogil:
+    double complex CMPLX(double, double)
     double cabs(double complex z)
     double carg(double complex z)
     double complex ccos(double complex z)
@@ -60,7 +61,6 @@ cdef number_t sqrt(number_t x) nogil:
     elif number_t is double_complex:
         return csqrt(x)
 
-
 cdef double abs(number_t x) nogil:
     """Fused type version of abs"""
     if number_t is double:
@@ -75,6 +75,17 @@ cdef double arg(number_t x) nogil:
     elif number_t is double_complex:
         return carg(x)
 
+cdef double complex angled_cpow(double complex base, double exponent, double branch_angle) nogil:
+    cdef int sheet = (carg(base)>branch_angle)-1
+    cdef double complex sheet_phase = cexp(CMPLX(0, 2*pi*sheet*exponent))
+    
+    return cpow(base,exponent) * sheet_phase
+
+cdef number_t angled_sqrt(number_t x, double branch_angle) nogil:
+    if number_t is double:
+        return sqrt(x)
+    elif number_t is double_complex:
+        return angled_cpow(x, 0.5, branch_angle)
 
 cdef long minusonepow(long l) nogil:
     """Minus one to an integer power"""

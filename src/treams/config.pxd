@@ -1,0 +1,4 @@
+cdef float BRANCH_CUT_INCGAMMA
+cdef float BRANCH_CUT_SQRT_MIE_N
+cdef float BRANCH_CUT_SQRT_MIE_Z
+cdef float BRANCH_CUT_CPOW

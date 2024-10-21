@@ -22,6 +22,8 @@ cdef number_t exp(number_t x) nogil
 cdef number_t pow(number_t x, number_t y) nogil
 cdef number_t sin(number_t x) nogil
 cdef number_t sqrt(number_t x) nogil
+cdef double complex angled_cpow(double complex base, double exponent, double branch_angle) nogil
+cdef number_t angled_sqrt(number_t x, double branch_angle) nogil
 
 cdef long minusonepow(long l) nogil
 cdef long array_zero(numeric *n, long l) nogil

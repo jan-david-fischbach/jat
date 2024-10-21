@@ -23,13 +23,20 @@ cimport scipy.special.cython_special as sc
 from libc.string cimport memcpy
 from scipy.linalg.cython_blas cimport zgemm
 from scipy.linalg.cython_lapack cimport zgesv
+from libc.math cimport pi
 
 cimport treams.special.cython_special as cs
-from treams.special._misc cimport double_complex, sqrt
-
+cimport treams.config
+from treams.special._misc cimport double_complex, angled_sqrt
 
 cdef extern from "<complex.h>" nogil:
     double complex csqrt(double complex z)
+
+cdef number_t sqrt(number_t x) nogil:
+    return angled_sqrt(x, treams.config.BRANCH_CUT_SQRT_MIE_N)
+
+cdef number_t imp_sqrt(number_t x) nogil:
+    return angled_sqrt(x, treams.config.BRANCH_CUT_SQRT_MIE_Z) #2*pi-treams.config.BRANCH_CUT_SQRT_MIE
 
 cdef void _interface(long l, number_t x[2][2], number_t *z, double complex m[4][4]) nogil:
     """Fill a matrix for the relation at a spherical interface.
@@ -138,11 +145,11 @@ cdef void _mie(long l, number_t *x, number_t *epsilon, number_t *mu, number_t *k
     cdef int two = 2, four = 4
     cdef double complex zone = 1, zzero = 0
     nr[1] = sqrt(epsilon[0] * mu[0])
-    z[1] = sqrt(mu[0] / epsilon[0])
+    z[1] = imp_sqrt(mu[0] / epsilon[0])
     cdef long i
     for i in range(n):
         z[0] = z[1]
-        z[1] = sqrt(mu[i + 1] / epsilon[i + 1])
+        z[1] = imp_sqrt(mu[i + 1] / epsilon[i + 1])
         nr[0] = nr[1]
         nr[1] = sqrt(epsilon[i + 1] * mu[i + 1])
         xn[0][0] = x[i] * (nr[0] - kappa[i])
