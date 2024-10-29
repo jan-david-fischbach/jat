@@ -59,6 +59,10 @@ Functions
    translate
 
 """
+import numpy, scipy # noqa: F401
+from threadpoolctl import ThreadpoolController
+controller = ThreadpoolController()
+controller.limit(limits=1, user_api='blas')
 
 from treams._core import (  # noqa: F401
     CylindricalWaveBasis,
