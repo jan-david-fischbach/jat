@@ -10,6 +10,7 @@ __all__ = [
     "hankel1_d",
     "hankel2_d",
     "incgamma",
+    "unshifted_incgamma",
     "intkambe",
     "jv_d",
     "lpmv",
@@ -553,6 +554,7 @@ Returns:
 
 cdef np.PyUFuncGenericFunction ufunc_incgamma_loops[2]
 cdef void *ufunc_incgamma_data[2]
+cdef void *ufunc_unshifted_incgamma_data[2]
 cdef char ufunc_incgamma_types[2 * 3]
 
 ufunc_incgamma_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd
@@ -563,8 +565,12 @@ ufunc_incgamma_types[2] = <char>np.NPY_DOUBLE
 ufunc_incgamma_types[3] = <char>np.NPY_DOUBLE
 ufunc_incgamma_types[4] = <char>np.NPY_CDOUBLE
 ufunc_incgamma_types[5] = <char>np.NPY_CDOUBLE
+
 ufunc_incgamma_data[0] = <void*>_integrals.incgamma[double]
 ufunc_incgamma_data[1] = <void*>_integrals.incgamma[double_complex]
+
+ufunc_unshifted_incgamma_data[0] = <void*>_integrals.unshifted_incgamma[double]
+ufunc_unshifted_incgamma_data[1] = <void*>_integrals.unshifted_incgamma[double_complex]
 
 incgamma = np.PyUFunc_FromFuncAndData(
     ufunc_incgamma_loops,
@@ -586,7 +592,7 @@ This function is defined as
 
     Gamma(n, z) = \int_z^\infty t^{n - 1} \mathrm e^{-t} \mathrm dt
 
-The negative real axis is the branch cut of the implemented function.
+The positive imaginary axis is the branch cut of the implemented function.
 
 Args:
     l (integer or float): Integer or half-integer order
@@ -597,6 +603,23 @@ Returns:
 
 References:
     - `DLMF: 8.2 <https://dlmf.nist.gov/8.2>`_
+""",  # docstring
+    0,  # unused
+)
+
+unshifted_incgamma = np.PyUFunc_FromFuncAndData(
+    ufunc_incgamma_loops,
+    ufunc_unshifted_incgamma_data,
+    ufunc_incgamma_types,
+    2,  # number of supported input types
+    2,  # number of input args
+    1,  # number of output args
+    0,  # identity element
+    "unshifted_incgamma",  # function name
+    r"""unshifted_incgamma(l, z)
+
+see `incgamma` but with the branchcut along the negative real axis
+
 """,  # docstring
     0,  # unused
 )

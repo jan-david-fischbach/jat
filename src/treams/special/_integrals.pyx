@@ -5,15 +5,17 @@ from libc.math cimport M_SQRT1_2, NAN
 from libc.math cimport exp as expd
 from libc.math cimport isnan, lgamma
 from libc.stdlib cimport free, labs, malloc
-from numpy.math cimport INFINITY, NAN
+from numpy.math cimport INFINITY, NAN, PI
 
-from treams.special._misc cimport SQPI, double_complex, exp, pow, sqrt
+from treams.special._misc cimport SQPI, double_complex, exp, pow, sqrt, arg
+cimport treams.config
 
 
 cdef extern from "<complex.h>" nogil:
     double creal(double complex x)
     double cimag(double complex x)
-
+    double complex CMPLX(double, double)
+    double complex cexp(double complex z)
 
 cdef number_t incgamma(double n, number_t z) nogil:
     r"""
@@ -28,10 +30,23 @@ cdef number_t incgamma(double n, number_t z) nogil:
 
         \Gamma(n, z) = \int_z^\infty t^{n - 1} \mathrm e^{-t} \mathrm dt
 
-    The negative real axis is the branch cut of the implemented function.
+    The branch cut is chosen to lie on the positive imaginary axis.
 
     References:
         - `DLMF: 8.2 <https://dlmf.nist.gov/8.2>`
+    """
+    if number_t is double:
+        return unshifted_incgamma(n, z)
+    
+    cdef float angle = treams.config.BRANCH_CUT_INCGAMMA #default: PI/2 angle of the branch cut
+    cdef int sheet = (arg(z)>angle) #-1 for -PI/2 bc
+    cdef double complex sheet_phase = cexp(CMPLX(0,2*PI*sheet*n))
+    return sheet_phase*unshifted_incgamma(n, z)+(1-sheet_phase)*cs.gamma(n) # Based on DLMF: 8.2.9 <https://dlmf.nist.gov/8.2>
+    
+cdef number_t unshifted_incgamma(double n, number_t z) nogil:
+    r"""
+    Implementation of incgamma with branchcut along the negative real axis.
+    (for z on the negative real axis the limit from below the real axis is used)
     """
     cdef long twicen = <long>(2 * n)
     if twicen != 2 * n:
@@ -48,8 +63,8 @@ cdef number_t incgamma(double n, number_t z) nogil:
     if twicen == 1:
         return SQPI * cs.erfc(sqrt(z))
     if twicen > 2:
-        return (n - 1) * incgamma(n - 1, z) + pow(z, n - 1) * exp(-z)
-    return (incgamma(n + 1, z) - pow(z, n) * exp(-z)) / n
+        return (n - 1) * unshifted_incgamma(n - 1, z) + pow(z, n - 1) * exp(-z)
+    return (unshifted_incgamma(n + 1, z) - pow(z, n) * exp(-z)) / n
 
 
 cdef number_t _intkambe_m3(number_t z, number_t eta) nogil:

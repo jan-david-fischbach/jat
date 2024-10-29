@@ -23,13 +23,20 @@ cimport scipy.special.cython_special as sc
 from libc.string cimport memcpy
 from scipy.linalg.cython_blas cimport zgemm
 from scipy.linalg.cython_lapack cimport zgesv
+from libc.math cimport pi
 
 cimport treams.special.cython_special as cs
-from treams.special._misc cimport double_complex, sqrt
-
+cimport treams.config
+from treams.special._misc cimport double_complex, angled_sqrt
 
 cdef extern from "<complex.h>" nogil:
     double complex csqrt(double complex z)
+
+cdef number_t sqrt(number_t x) nogil:
+    return angled_sqrt(x, treams.config.BRANCH_CUT_SQRT_MIE_N)
+
+cdef number_t imp_sqrt(number_t x) nogil:
+    return angled_sqrt(x, treams.config.BRANCH_CUT_SQRT_MIE_Z) #2*pi-treams.config.BRANCH_CUT_SQRT_MIE
 
 cdef void _interface(long l, number_t x[2][2], number_t *z, double complex m[4][4]) nogil:
     """Fill a matrix for the relation at a spherical interface.
@@ -37,7 +44,7 @@ cdef void _interface(long l, number_t x[2][2], number_t *z, double complex m[4][
     Note:
         The result is stored in column major order, because it is later processed with
         Fortran routines.
-
+        See expressions in thesis (eq. in apendix E and eq. 2.44)
     Args:
         l: Degree of the coefficient
         x: Size parameters in the corresponding media, with the first dimension indexing
@@ -51,8 +58,8 @@ cdef void _interface(long l, number_t x[2][2], number_t *z, double complex m[4][
     cdef number_t psi[2][2]
     cdef double complex chi[2][2]
     cdef long i, j
-    for i in range(2):
-        for j in range(2):
+    for i in range(2): # side: 0-> no tilde (inside); 1-> tilde (outside)
+        for j in range(2): # helicity: 0->-; 1->+
             sb[i][j] = sc.spherical_jn(l, x[i][j], 0)
             sh[i][j] = cs.spherical_hankel1(l, x[i][j])
             psi[i][j] = sc.spherical_jn(l, x[i][j], 1) + sb[i][j] / x[i][j]
@@ -60,15 +67,15 @@ cdef void _interface(long l, number_t x[2][2], number_t *z, double complex m[4][
     cdef double complex zs = (z[1] + z[0]) / (2j * z[0])
     cdef double complex zd = (z[1] - z[0]) / (2j * z[0])
     # Column major order! The actual matrix we have in mind is transposed here
-    m[0][0] = (chi[1][0] * sb[0][0] - sh[1][0] * psi[0][0]) * zs * x[1][0] * x[1][0]
-    m[1][0] = (chi[1][0] * sb[0][1] + sh[1][0] * psi[0][1]) * zd * x[1][0] * x[1][0]
-    m[2][0] = (chi[1][0] * sh[0][0] - sh[1][0] * chi[0][0]) * zs * x[1][0] * x[1][0]
-    m[3][0] = (chi[1][0] * sh[0][1] + sh[1][0] * chi[0][1]) * zd * x[1][0] * x[1][0]
-
-    m[0][1] = (chi[1][1] * sb[0][0] + sh[1][1] * psi[0][0]) * zd * x[1][1] * x[1][1]
-    m[1][1] = (chi[1][1] * sb[0][1] - sh[1][1] * psi[0][1]) * zs * x[1][1] * x[1][1]
-    m[2][1] = (chi[1][1] * sh[0][0] + sh[1][1] * chi[0][0]) * zd * x[1][1] * x[1][1]
-    m[3][1] = (chi[1][1] * sh[0][1] - sh[1][1] * chi[0][1]) * zs * x[1][1] * x[1][1]
+    m[0][0] = ( chi[1][0] * sb[0][0] - sh[1][0] * psi[0][0]) * zs * x[1][0] * x[1][0]
+    m[1][0] = ( chi[1][0] * sb[0][1] + sh[1][0] * psi[0][1]) * zd * x[1][0] * x[1][0]
+    m[2][0] = ( chi[1][0] * sh[0][0] - sh[1][0] * chi[0][0]) * zs * x[1][0] * x[1][0]
+    m[3][0] = ( chi[1][0] * sh[0][1] + sh[1][0] * chi[0][1]) * zd * x[1][0] * x[1][0]
+ 
+    m[0][1] = ( chi[1][1] * sb[0][0] + sh[1][1] * psi[0][0]) * zd * x[1][1] * x[1][1]
+    m[1][1] = ( chi[1][1] * sb[0][1] - sh[1][1] * psi[0][1]) * zs * x[1][1] * x[1][1]
+    m[2][1] = ( chi[1][1] * sh[0][0] + sh[1][1] * chi[0][0]) * zd * x[1][1] * x[1][1]
+    m[3][1] = ( chi[1][1] * sh[0][1] - sh[1][1] * chi[0][1]) * zs * x[1][1] * x[1][1]
 
     m[0][2] = (-psi[1][0] * sb[0][0] + sb[1][0] * psi[0][0]) * zs * x[1][0] * x[1][0]
     m[1][2] = (-psi[1][0] * sb[0][1] - sb[1][0] * psi[0][1]) * zd * x[1][0] * x[1][0]
@@ -113,11 +120,11 @@ cdef void _innermost_interface(long l, number_t x[2][2], number_t *z, double com
     cdef double complex zs = (z[1] + z[0]) / (2j * z[0])
     cdef double complex zd = (z[1] - z[0]) / (2j * z[0])
     # Column major order! The actual matrix we have in mind is transposed here
-    m[0][0] = (chi[1][0] * sb[0][0] - sh[1][0] * psi[0][0]) * zs * x[1][0] * x[1][0]
-    m[1][0] = (chi[1][0] * sb[0][1] + sh[1][0] * psi[0][1]) * zd * x[1][0] * x[1][0]
-
-    m[0][1] = (chi[1][1] * sb[0][0] + sh[1][1] * psi[0][0]) * zd * x[1][1] * x[1][1]
-    m[1][1] = (chi[1][1] * sb[0][1] - sh[1][1] * psi[0][1]) * zs * x[1][1] * x[1][1]
+    m[0][0] = ( chi[1][0] * sb[0][0] - sh[1][0] * psi[0][0]) * zs * x[1][0] * x[1][0]
+    m[1][0] = ( chi[1][0] * sb[0][1] + sh[1][0] * psi[0][1]) * zd * x[1][0] * x[1][0]
+ 
+    m[0][1] = ( chi[1][1] * sb[0][0] + sh[1][1] * psi[0][0]) * zd * x[1][1] * x[1][1]
+    m[1][1] = ( chi[1][1] * sb[0][1] - sh[1][1] * psi[0][1]) * zs * x[1][1] * x[1][1]
 
     m[0][2] = (-psi[1][0] * sb[0][0] + sb[1][0] * psi[0][0]) * zs * x[1][0] * x[1][0]
     m[1][2] = (-psi[1][0] * sb[0][1] - sb[1][0] * psi[0][1]) * zd * x[1][0] * x[1][0]
@@ -138,11 +145,11 @@ cdef void _mie(long l, number_t *x, number_t *epsilon, number_t *mu, number_t *k
     cdef int two = 2, four = 4
     cdef double complex zone = 1, zzero = 0
     nr[1] = sqrt(epsilon[0] * mu[0])
-    z[1] = sqrt(mu[0] / epsilon[0])
+    z[1] = imp_sqrt(mu[0] / epsilon[0])
     cdef long i
     for i in range(n):
         z[0] = z[1]
-        z[1] = sqrt(mu[i + 1] / epsilon[i + 1])
+        z[1] = imp_sqrt(mu[i + 1] / epsilon[i + 1])
         nr[0] = nr[1]
         nr[1] = sqrt(epsilon[i + 1] * mu[i + 1])
         xn[0][0] = x[i] * (nr[0] - kappa[i])

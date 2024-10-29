@@ -686,7 +686,8 @@ cdef double complex _cperiodic_to_pw_p(double kx, double ky, number_t kz, long p
     if kz == 0:
         kz_s = 1e-20 + 1e-20j
     elif (cimag(kz_s) < 0) or (cimag(kz_s) == 0 and creal(kz_s) < 0):
-        kz_s = -kz_s
+        pass
+        #kz_s = -kz_s
     cdef double complex prefactor = (
         sqrtd(pi * (2 * l + 1) / <double>(l * (l + 1)))
         * expd((lgamma(l - m + 1) - lgamma(l + m + 1)) * 0.5)
