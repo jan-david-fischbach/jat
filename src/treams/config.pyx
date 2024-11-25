@@ -17,13 +17,14 @@ or `parity`.
 from libc.math cimport pi
 
 POLTYPE = "helicity"
+BRANCH_CUT_SQRT_KZ = 0.5*pi
 
 cdef float BRANCH_CUT_INCGAMMA = 0.5*pi
 cdef float BRANCH_CUT_CPOW     = -0.5*pi
+#rotated from the typical negative real axis
 
 cdef float BRANCH_CUT_SQRT_MIE_N = -pi
 cdef float BRANCH_CUT_SQRT_MIE_Z = -pi
-#rotated from the typical negative real axis
 
 def set_BRANCH_CUT_INCGAMMA(val):
    global BRANCH_CUT_INCGAMMA
@@ -40,3 +41,7 @@ def set_BRANCH_CUT_SQRT_MIE_N(val):
 def set_BRANCH_CUT_SQRT_MIE_Z(val):
    global BRANCH_CUT_SQRT_MIE_Z
    BRANCH_CUT_SQRT_MIE_Z = val
+
+def set_BRANCH_CUT_SQRT_KZ(val):
+   global BRANCH_CUT_SQRT_KZ
+   BRANCH_CUT_SQRT_KZ = val
