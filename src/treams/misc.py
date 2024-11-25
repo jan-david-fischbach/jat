@@ -15,6 +15,7 @@
 import numpy as np
 
 import treams.lattice as la
+import treams.config as config
 
 
 def refractive_index(epsilon=1, mu=1, kappa=0):
@@ -102,6 +103,16 @@ def pickmodes(out, in_):
 #         res[:, i, :] = wave_vec_z(kpar[0], kpar[1], ks)
 #     return res
 
+def angled_sqrt(x, bc_angle=0.5*np.pi, nan_tolerance=0):
+    arg = (bc_angle-np.pi)
+    adjusted_angle = np.angle(x*np.exp(1j*arg))
+
+    adjusted_angle = np.where(
+        np.abs(adjusted_angle)<=(np.pi-nan_tolerance), 
+        adjusted_angle, 
+        np.nan)
+    
+    return np.sqrt(np.abs(x)) * np.exp(0.5j * (adjusted_angle - arg)) 
 
 def wave_vec_z(kx, ky, k):
     r"""Z component of the wave vector with positive imaginary part.
@@ -120,7 +131,7 @@ def wave_vec_z(kx, ky, k):
     kx = np.asarray(kx)
     ky = np.asarray(ky)
     k = np.asarray(k, complex)
-    res = np.sqrt(k * k - kx * kx - ky * ky)
+    res = angled_sqrt(k * k - kx * kx - ky * ky, bc_angle=config.BRANCH_CUT_SQRT_KZ)
     # if res.ndim == 0 and res.imag < 0:
     #     res = -res
     # elif res.ndim > 0:
