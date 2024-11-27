@@ -657,18 +657,15 @@ def translate_periodic(ks, kpar, a, rs, out, in_=None, rsin=None, poltype=None, 
     )
 
 
-cdef double complex _cperiodic_to_pw_h(double kx, double ky, number_t kz, long polpw, long l, long m, long polvsw, double area) nogil:
+cdef double complex _cperiodic_to_pw_h(double kx, double ky, number_t kz, long direction, long polpw, long l, long m, long polvsw, double area) nogil:
     if polvsw != polpw:
         return 0.0j
     cdef number_t k = sqrt(kx * kx + ky * ky + kz * kz)
     cdef double complex costheta = kz / k
     cdef double phi = atan2(ky, kx)
-    cdef double complex kz_s = kz
+    cdef double complex kz_s = kz * direction # 1 for up -1 else
     if kz == 0:
         kz_s = 1e-20 + 1e-20j
-    elif (cimag(kz_s) < 0) or (cimag(kz_s) == 0 and creal(kz_s) < 0):
-        pass
-        #kz_s = -kz_s
     return (
         sqrtd(pi * (2 * l + 1) / <double>(l * (l + 1)))
         * expd((lgamma(l - m + 1) - lgamma(l + m + 1)) * 0.5)
@@ -679,16 +676,13 @@ cdef double complex _cperiodic_to_pw_h(double kx, double ky, number_t kz, long p
     )
 
 
-cdef double complex _cperiodic_to_pw_p(double kx, double ky, number_t kz, long polpw, long l, long m, long polvsw, double area) nogil:
+cdef double complex _cperiodic_to_pw_p(double kx, double ky, number_t kz, long direction, long polpw, long l, long m, long polvsw, double area) nogil:
     cdef number_t k = sqrt(kx * kx + ky * ky + kz * kz)
     cdef double complex costheta = kz / k
     cdef double phi = atan2(ky, kx)
-    cdef double complex kz_s = kz
+    cdef double complex kz_s = kz * direction
     if kz == 0:
         kz_s = 1e-20 + 1e-20j
-    elif (cimag(kz_s) < 0) or (cimag(kz_s) == 0 and creal(kz_s) < 0):
-        pass
-        #kz_s = -kz_s
     cdef double complex prefactor = (
         sqrtd(pi * (2 * l + 1) / <double>(l * (l + 1)))
         * expd((lgamma(l - m + 1) - lgamma(l + m + 1)) * 0.5)
@@ -712,10 +706,11 @@ cdef void _loop_periodic_d(char **args, np.npy_intp *dims, np.npy_intp *steps, v
     cdef char *ip5 = args[5]
     cdef char *ip6 = args[6]
     cdef char *ip7 = args[7]
-    cdef char *op0 = args[8]
+    cdef char *ip8 = args[8]
+    cdef char *op0 = args[9]
     cdef double complex ov0
     for i in range(n):
-        ov0 = (<double complex(*)(double, double, double, long, long, long, long, double) nogil>func)(
+        ov0 = (<double complex(*)(double, double, double, long, long, long, long, long, double) nogil>func)(
             <double>(<double*>ip0)[0],
             <double>(<double*>ip1)[0],
             <double>(<double*>ip2)[0],
@@ -723,7 +718,8 @@ cdef void _loop_periodic_d(char **args, np.npy_intp *dims, np.npy_intp *steps, v
             <long>(<long*>ip4)[0],
             <long>(<long*>ip5)[0],
             <long>(<long*>ip6)[0],
-            <double>(<double*>ip7)[0],
+            <long>(<long*>ip7)[0],
+            <double>(<double*>ip8)[0],
         )
         (<double complex*>op0)[0] = <double complex>ov0
         ip0 += steps[0]
@@ -734,7 +730,8 @@ cdef void _loop_periodic_d(char **args, np.npy_intp *dims, np.npy_intp *steps, v
         ip5 += steps[5]
         ip6 += steps[6]
         ip7 += steps[7]
-        op0 += steps[8]
+        ip8 += steps[8]
+        op0 += steps[9]
 
 
 cdef void _loop_periodic_D(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
@@ -748,10 +745,11 @@ cdef void _loop_periodic_D(char **args, np.npy_intp *dims, np.npy_intp *steps, v
     cdef char *ip5 = args[5]
     cdef char *ip6 = args[6]
     cdef char *ip7 = args[7]
-    cdef char *op0 = args[8]
+    cdef char *ip8 = args[8]
+    cdef char *op0 = args[9]
     cdef double complex ov0
     for i in range(n):
-        ov0 = (<double complex(*)(double, double, double complex, long, long, long, long, double) nogil>func)(
+        ov0 = (<double complex(*)(double, double, double complex, long, long, long, long, long, double) nogil>func)(
             <double>(<double*>ip0)[0],
             <double>(<double*>ip1)[0],
             <double complex>(<double complex*>ip2)[0],
@@ -759,7 +757,8 @@ cdef void _loop_periodic_D(char **args, np.npy_intp *dims, np.npy_intp *steps, v
             <long>(<long*>ip4)[0],
             <long>(<long*>ip5)[0],
             <long>(<long*>ip6)[0],
-            <double>(<double*>ip7)[0],
+            <long>(<long*>ip7)[0],
+            <double>(<double*>ip8)[0],
         )
         (<double complex*>op0)[0] = <double complex>ov0
         ip0 += steps[0]
@@ -770,7 +769,8 @@ cdef void _loop_periodic_D(char **args, np.npy_intp *dims, np.npy_intp *steps, v
         ip5 += steps[5]
         ip6 += steps[6]
         ip7 += steps[7]
-        op0 += steps[8]
+        ip8 += steps[8]
+        op0 += steps[9]
 
 
 cdef np.PyUFuncGenericFunction ufunc_pw_loops[2]
@@ -780,6 +780,7 @@ cdef char ufunc_pw_types[2 * 9]
 
 ufunc_pw_loops[0] = <np.PyUFuncGenericFunction>_loop_periodic_d
 ufunc_pw_loops[1] = <np.PyUFuncGenericFunction>_loop_periodic_D
+# types for _loop_periodic_d
 ufunc_pw_types[0] = <char>np.NPY_DOUBLE
 ufunc_pw_types[1] = <char>np.NPY_DOUBLE
 ufunc_pw_types[2] = <char>np.NPY_DOUBLE
@@ -787,17 +788,19 @@ ufunc_pw_types[3] = <char>np.NPY_LONG
 ufunc_pw_types[4] = <char>np.NPY_LONG
 ufunc_pw_types[5] = <char>np.NPY_LONG
 ufunc_pw_types[6] = <char>np.NPY_LONG
-ufunc_pw_types[7] = <char>np.NPY_DOUBLE
-ufunc_pw_types[8] = <char>np.NPY_CDOUBLE
-ufunc_pw_types[9] = <char>np.NPY_DOUBLE
+ufunc_pw_types[7] = <char>np.NPY_LONG
+ufunc_pw_types[8] = <char>np.NPY_DOUBLE
+ufunc_pw_types[9] = <char>np.NPY_CDOUBLE
 ufunc_pw_types[10] = <char>np.NPY_DOUBLE
-ufunc_pw_types[11] = <char>np.NPY_CDOUBLE
-ufunc_pw_types[12] = <char>np.NPY_LONG
+ufunc_pw_types[11] = <char>np.NPY_DOUBLE
+ufunc_pw_types[12] = <char>np.NPY_CDOUBLE # the difference
 ufunc_pw_types[13] = <char>np.NPY_LONG
 ufunc_pw_types[14] = <char>np.NPY_LONG
 ufunc_pw_types[15] = <char>np.NPY_LONG
-ufunc_pw_types[16] = <char>np.NPY_DOUBLE
-ufunc_pw_types[17] = <char>np.NPY_CDOUBLE
+ufunc_pw_types[16] = <char>np.NPY_LONG
+ufunc_pw_types[17] = <char>np.NPY_LONG
+ufunc_pw_types[18] = <char>np.NPY_DOUBLE
+ufunc_pw_types[19] = <char>np.NPY_CDOUBLE
 ufunc_pw_h_data[0] = <void*>_cperiodic_to_pw_h[double]
 ufunc_pw_h_data[1] = <void*>_cperiodic_to_pw_h[double_complex]
 ufunc_pw_p_data[0] = <void*>_cperiodic_to_pw_p[double]
@@ -808,7 +811,7 @@ _periodic_to_pw_h = np.PyUFunc_FromFuncAndData(
     ufunc_pw_h_data,
     ufunc_pw_types,
     2,
-    8,
+    9,
     1,
     0,
     "_periodic_to_pw_h",
@@ -820,7 +823,7 @@ _periodic_to_pw_p = np.PyUFunc_FromFuncAndData(
     ufunc_pw_p_data,
     ufunc_pw_types,
     2,
-    8,
+    9,
     1,
     0,
     "_periodic_to_pw_p",
@@ -829,7 +832,7 @@ _periodic_to_pw_p = np.PyUFunc_FromFuncAndData(
 )
 
 
-def periodic_to_pw(kx, ky, kz, pol, l, m, qol, area, poltype=None, *args, **kwargs):
+def periodic_to_pw(kx, ky, kz, dir, pol, l, m, qol, area, poltype=None, *args, **kwargs):
     """periodic_to_pw(kx, ky, kz, pol, l, m, qol, area, helicity=True)
 
     Convert periodic spherical wave to plane wave.
@@ -846,6 +849,7 @@ def periodic_to_pw(kx, ky, kz, pol, l, m, qol, area, poltype=None, *args, **kwar
         kx (float, array_like): X component of destination mode wave vector
         ky (float, array_like): Y component of destination mode wave vector
         kz (float or complex, array_like): Z component of destination mode wave vector
+        dir (int): up (1) or down (-1) direction of the plane waves expanded into
         pol (int, array_like): Polarization of the destination mode
         l (int, array_like): Degree of the source mode
         m (int, array_like): Order of the source mode
@@ -859,9 +863,9 @@ def periodic_to_pw(kx, ky, kz, pol, l, m, qol, area, poltype=None, *args, **kwar
     """
     poltype = config.POLTYPE if poltype is None else poltype
     if poltype == "helicity":
-        return _periodic_to_pw_h(kx, ky, kz, pol, l, m, qol, area, *args, **kwargs)
+        return _periodic_to_pw_h(kx, ky, kz, dir, pol, l, m, qol, area, *args, **kwargs)
     elif poltype == "parity":
-        return _periodic_to_pw_p(kx, ky, kz, pol, l, m, qol, area, *args, **kwargs)
+        return _periodic_to_pw_p(kx, ky, kz, dir, pol, l, m, qol, area, *args, **kwargs)
     raise ValueError(f"invalid poltype '{poltype}'")
 
 

@@ -855,6 +855,7 @@ def _pw_sw_expand(
         modetype = "up"
     kpar = WaveVector(kpar)
     kvecs = to_basis.kvecs(k0, material, modetype)
+    direction = 1 if modetype=="up" else -1
     transl = pw.translate(
         *(b[:, None] for b in kvecs),
         -basis.positions[:, 0],
@@ -863,6 +864,7 @@ def _pw_sw_expand(
     )
     res = transl[:, basis.pidx] * sw.periodic_to_pw(
         *(b[:, None] for b in kvecs),
+        direction,
         to_basis.pol[:, None],
         *basis.lms,
         Lattice(lattice, "xy").volume,
