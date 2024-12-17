@@ -350,7 +350,7 @@ def _convert_to_k0(x, xtype, xunit, k0unit=r"nm^{-1}"):
     if xtype == "angular_frequency":
         xunit = FREQUENCIES[xunit]
         return x / c * (xunit / k0unit)
-    if xtype == "vacuum_wavelength":
+    if xtype == "vacuum_wavelength" or xtype == "lambda0":
         xunit = LENGTHS[xunit]
         return 2 * np.pi / (x * xunit * k0unit)
     if xtype == "vacuum_wavenumber":
@@ -383,6 +383,7 @@ def _load_hdf5(h5file, lunit=None):
         "frequency",
         "angular_frequency",
         "vacuum_wavelength",
+        "lambda0",
         "vacuum_wavenumber",
         "angular_vacuum_wavenumber",
     ):
