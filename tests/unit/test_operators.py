@@ -400,7 +400,7 @@ class TestExpandLattice:
             lattice, [3, 0], basis=(a, b), k0=2.5, material=(1, 4, 0), where=where
         )
         y = treams.PhysicsArray(
-            [[treams.sw.periodic_to_pw(3, 0, 4, 0, 1, -1, 0, 4), 0]],
+            [[treams.sw.periodic_to_pw(3, 0, 4, 1, 0, 1, -1, 0, 4), 0]],
             basis=(a, b),
             k0=2.5,
             kpar=[3, 0, np.nan],

@@ -316,6 +316,7 @@ Returns:
 
 
 cdef double complex _cperiodic_to_pw(double kx, number_t ky, double kzpw, long polpw, double kzcw, long m, long polcw, double a) nogil:
+    #TODO Check
     cdef number_t krho = sqrt(kx * kx + ky * ky)
     cdef double complex ky_s = ky
     if (polcw == polpw == 0 or polcw == polpw == 1) and kzcw == kzpw:
