@@ -8,7 +8,6 @@ In particular I have been working towards evaluation at complex valued frequenci
 To install the package please clone the repo and run
 
 ```sh
+cd jat
 pip install .
 ```
-
-in the projects root directory.

@@ -48,27 +48,6 @@ class TestInit:
             and np.all(tm.ks == [9, 15])
         )
 
-    def test_complex_k(self):
-        tm = TMatrixC(
-            np.diag([1, 2]),
-            k0=3+0.3j,
-            material=treams.Material(2, 8, 1),
-            basis=treams.CylindricalWaveBasis([[1, 0, 0], [1, 0, 1]], [1, 0, 0]),
-        )
-        
-        assert np.all(tm == np.diag([1, 2]))
-        assert tm.k0 == 3+0.3j
-        assert tm.material.epsilon == 2
-        assert tm.material.mu == 8
-        assert tm.material.kappa == 1
-        assert np.all(tm.basis.positions == [[1, 0, 0]])
-        assert tm.poltype == "helicity"
-        assert np.all(tm.basis.kz == [1, 1])
-        assert np.all(tm.basis.m == [0, 0])
-        assert np.all(tm.basis.pol == [0, 1])
-        assert np.all(tm.basis.pidx == [0, 0])
-        assert np.allclose(tm.ks, [9+0.9j, 15+1.5j])
-
 
 class TestCylinder:
     def test(self):

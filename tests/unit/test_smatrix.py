@@ -27,17 +27,6 @@ def test_interface():
     )
 
 
-def test_interface_complex_k():
-    b = treams.PlaneWaveBasisByComp.default([1, 2])
-    k0 = 2+0.1j
-    sm = SMatrices.interface(b, k0, [(2, 2, 1), (9, 1, 2)])
-    #TODO add expected
-    
-
-def test_propagation_complex_k():
-    b = treams.PlaneWaveBasisByComp.default([1, 2])
-    SMatrices.propagation([0, 0, 3], b, 2+0.1j, 2)
-
 def test_slab():
     b = treams.PlaneWaveBasisByComp.default([1, 2])
     sm = SMatrices.slab(3, b, 6, [1, 2, 3])

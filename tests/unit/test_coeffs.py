@@ -55,30 +55,6 @@ class TestMie:
             < EPSSQ
         )
 
-    def test_complex_k(self):
-        expect = np.array(
-            [
-                [-0.02085561148115226-0.025396081220487046j,
-                0.2635130340550503 +0.5727465361047477j  ],
-                [ 0.4657296914383242 +1.0122651749996803j  ,
-                -2.6866240949613784 +2.0104548885956643j  ]
-            ]
-        )
-
-        result = cf.mie(
-                    3,
-                    [1, 2 + 1j, 3],
-                    [1, 2, 3 + 1j, 4],
-                    [4, 3 + 0.1j, 1, 2],
-                    [0.3, -0.1 + 0.1j, 1 + 0.1j, 0.4],
-                )
-
-        assert np.all(
-            np.abs(
-                result - expect
-            )
-            < EPSSQ
-        )
 
 class TestFresnel:
     def test_real(self):

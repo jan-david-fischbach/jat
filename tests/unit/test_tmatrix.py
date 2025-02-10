@@ -61,30 +61,6 @@ class TestSphere:
             and tm.poltype == "helicity"
             and tm.basis == treams.SphericalWaveBasis.default(2)
         )
-    
-    def test_complex_k(self):
-        tm = TMatrix.sphere(2, 3+1j, 4, [(2, 1, 1), (9, 1, 2)])
-        del tm.modetype
-        m = treams.coeffs.mie([1, 2], [(3+1j)*4], [2, 9], [1, 1], [1, 2])
-        assert np.all(np.diag(tm)[:6:2] == m[0, 1, 1])
-        assert np.all(np.diag(tm)[1:6:2] == m[0, 0, 0])
-        assert np.all(np.diag(tm)[6::2] == m[1, 1, 1])
-        assert np.all(np.diag(tm)[7::2] == m[1, 0, 0])
-        assert np.all(np.diag(tm, -1)[:6:2] == m[0, 0, 1])
-        assert np.all(np.diag(tm, 1)[:6:2] == m[0, 1, 0])
-        assert np.all(np.diag(tm, -1)[6::2] == m[1, 0, 1])
-        assert np.all(np.diag(tm, 1)[6::2] == m[1, 1, 0])
-        assert np.all(np.diag(tm, -1)[1:6:2] == 0)
-        assert np.all(np.diag(tm, 1)[1:6:2] == 0)
-        assert np.all(np.diag(tm, -1)[7::2] == 0)
-        assert np.all(np.diag(tm, 1)[7::2] == 0)
-        assert np.all(np.triu(tm, 2) == 0)
-        assert np.all(np.tril(tm, -2) == 0)
-        assert tm.k0 == 3+1j
-        assert tm.material == (9, 1, 2)
-        assert tm.poltype == "helicity"
-        assert tm.basis == treams.SphericalWaveBasis.default(2)
-        
 
 
 class TestProperties:

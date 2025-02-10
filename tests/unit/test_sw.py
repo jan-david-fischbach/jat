@@ -34,42 +34,42 @@ class TestPeriodicToCw:
 class TestPeriodicToPw:
     def test_h(self):
         assert isclose(
-            sw.periodic_to_pw(1, 2, 3 + 4j, 1, 0, 5, -4, 0, 2),
+            sw.periodic_to_pw(1, 2, 3 + 4j, 0, 5, -4, 0, 2),
             -0.021612980340836 + 0.015904360513006j,
         )
 
     def test_h_zero(self):
-        assert sw.periodic_to_pw(1, 2, 3 + 4j, 1, 0, 5, -4, 1, 2) == 0
+        assert sw.periodic_to_pw(1, 2, 3 + 4j, 0, 5, -4, 1, 2) == 0
 
     def test_h_kz_zero(self):
-        x = sw.periodic_to_pw(1, 2, 0, 1, 0, 5, -4, 0, 2)
+        x = sw.periodic_to_pw(1, 2, 0, 0, 5, -4, 0, 2)
         assert abs(x) > 1e16 and isclose(x.real / x.imag, -1.823529411764707)
 
     def test_h_kz_neg(self):
         assert isclose(
-            sw.periodic_to_pw(1, 2, -3, -1, 0, 5, -4, 0, 2),
+            sw.periodic_to_pw(1, 2, -3, 0, 5, -4, 0, 2),
             -0.015256789234245 - 0.004449896859988j,
         )
 
     def test_p_same(self):
         assert isclose(
-            sw.periodic_to_pw(1, 2, 3, 1, 1, 5, -4, 1, 2, poltype="parity"),
+            sw.periodic_to_pw(1, 2, 3, 1, 5, -4, 1, 2, poltype="parity"),
             0.034026205422735 + 0.009924309914964j,
         )
 
     def test_p_opposite(self):
         assert isclose(
-            sw.periodic_to_pw(1, 2, 3, 1, 1, 5, -4, 0, 2, poltype="parity"),
+            sw.periodic_to_pw(1, 2, 3, 1, 5, -4, 0, 2, poltype="parity"),
             -0.049282994656980 - 0.014374206774952j,
         )
 
     def test_p_kz_zero(self):
-        x = sw.periodic_to_pw(1, 2, 0, 1, 1, 5, -4, 1, 2, poltype="parity")
+        x = sw.periodic_to_pw(1, 2, 0, 1, 5, -4, 1, 2, poltype="parity")
         assert abs(x) > 1e16 and isclose(x.real / x.imag, -1.823529411764707)
 
     def test_p_kz_neg(self):
         assert isclose(
-            sw.periodic_to_pw(1, 2, -3j, -1, 1, 5, -4, 1, 2, poltype="parity"),
+            sw.periodic_to_pw(1, 2, -3j, 1, 5, -4, 1, 2, poltype="parity"),
             -0.562764396508645 + 1.929477930886781j,
         )
 
