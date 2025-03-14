@@ -23,7 +23,6 @@ from treams.special._misc cimport (
     angled_cpow
 )
 
-
 # The preprocessor directives correct the missing macro in mingw-w64 by
 # substituting it with a corresponding function that is defined by cython anyway
 cdef extern from "<complex.h>" nogil:
@@ -83,9 +82,11 @@ cdef double complex _redincgamma(double n, double complex z) nogil:
     cdef long twicen = <long>(2 * n)
     if twicen != 2 * n:
         raise ValueError("l is not integer of half-integer")
-    cdef double singularity = 1e-7  # Value of the singularity: smaller is stronger
+    cdef double singularity = treams.config.SINGULARITY_REDINCGAMMA  
+    # Value of the singularity: smaller is stronger
     cdef double complex res
-    if creal(z) * creal(z) + cimag(z) * cimag(z) < 1e-12:
+    if (creal(z) * creal(z) + cimag(z) * cimag(z) < 
+        treams.config.SINGULARITY_THRESH_REDINCGAMMA):
         if twicen == 0:
             return -<double>EULER - log(singularity) + 0.5j * pi
         if twicen > 0 and (twicen + 2) % 4 != 0:

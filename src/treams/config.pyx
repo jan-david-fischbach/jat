@@ -21,10 +21,14 @@ BRANCH_CUT_SQRT_KZ = 0.5*pi
 
 cdef float BRANCH_CUT_INCGAMMA = 0.5*pi
 cdef float BRANCH_CUT_CPOW     = -0.5*pi
-#rotated from the typical negative real axis
+# rotated from the typical negative real axis
 
 cdef float BRANCH_CUT_SQRT_MIE_N = -pi
 cdef float BRANCH_CUT_SQRT_MIE_Z = -pi
+
+cdef float SINGULARITY_REDINCGAMMA = 1e-7
+cdef float SINGULARITY_THRESH_REDINCGAMMA = 1e-12 
+# Singularity clipping is triggered later for smaller values of thresh
 
 def set_BRANCH_CUT_INCGAMMA(val):
    global BRANCH_CUT_INCGAMMA
@@ -45,3 +49,12 @@ def set_BRANCH_CUT_SQRT_MIE_Z(val):
 def set_BRANCH_CUT_SQRT_KZ(val):
    global BRANCH_CUT_SQRT_KZ
    BRANCH_CUT_SQRT_KZ = val
+
+
+def set_SINGULARITY_REDINCGAMMA(val):
+   global SINGULARITY_REDINCGAMMA
+   SINGULARITY_REDINCGAMMA = val
+
+def set_SINGULARITY_THRESH_REDINCGAMMA(val):
+   global SINGULARITY_THRESH_REDINCGAMMA
+   SINGULARITY_THRESH_REDINCGAMMA = val
