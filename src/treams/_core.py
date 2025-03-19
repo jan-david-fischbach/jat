@@ -396,7 +396,7 @@ class CylindricalWaveBasis(BasisSet):
             raise ValueError(f"invalid shape of positions {positions.shape}")
 
         self.pidx, self.m, self.pol = [np.array(i, int) for i in (pidx, m, pol)]
-        self.kz = np.array(kz, float)
+        self.kz = to_float_or_complex(kz)#np.array(kz, float)
         self.kz.flags.writeable = False
         for i, j in ((self.pidx, pidx), (self.m, m), (self.pol, pol)):
             i.flags.writeable = False
@@ -1101,6 +1101,15 @@ def _raise_basis_error(*args):
     raise TypeError("'basis' must be BasisSet")
 
 def to_float_or_complex(k0):
+    if isinstance(k0, tuple):
+        k0 = np.array(k0)
+
+    if isinstance(k0, np.ndarray):
+        if np.iscomplexobj(k0):
+            return k0
+        else:
+            return k0.astype(float)
+
     if np.iscomplexobj(k0):
         return complex(k0)
     return float(k0)

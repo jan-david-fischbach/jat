@@ -36,7 +36,8 @@ cdef number_t sqrt(number_t x) nogil:
     return angled_sqrt(x, treams.config.BRANCH_CUT_SQRT_MIE_N)
 
 cdef number_t imp_sqrt(number_t x) nogil:
-    return angled_sqrt(x, treams.config.BRANCH_CUT_SQRT_MIE_Z) #2*pi-treams.config.BRANCH_CUT_SQRT_MIE
+    # square root used in the calculation of impedance
+    return angled_sqrt(x, treams.config.BRANCH_CUT_SQRT_MIE_Z)
 
 cdef void _interface(long l, number_t x[2][2], number_t *z, double complex m[4][4]) nogil:
     """Fill a matrix for the relation at a spherical interface.
@@ -463,7 +464,7 @@ cdef void _fill_cyl(long m, double complex kz, double complex ks[2], double rho,
     cdef double complex hz[2]
     cdef long i
     for i in range(2):
-        krho = csqrt(ks[i] * ks[i] - kz * kz)
+        krho = sqrt(ks[i] * ks[i] - kz * kz)
         x = krho * rho
         jphi[i] = -krho * sc.jv(m, x) / ks[i]
         jz[i] = -kz * m * sc.jv(m, x) / (ks[i] * x) + cs.jv_d(m, x) * (1 - 2 * i)
@@ -487,7 +488,7 @@ cdef void _fill_cyl_init(long m, double complex kz, double complex ks[2], double
     cdef double complex jz[2]
     cdef long i
     for i in range(2):
-        krho = csqrt(ks[i] * ks[i] - kz * kz)
+        krho = sqrt(ks[i] * ks[i] - kz * kz)
         x = krho * rho
         jphi[i] = -krho * sc.jv(m, x) / ks[i]
         jz[i] = -kz * m * sc.jv(m, x) / (ks[i] * x) + cs.jv_d(m, x) * (1 - 2 * i)
