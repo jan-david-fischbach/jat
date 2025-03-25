@@ -567,7 +567,7 @@ class AnnotatedArray(np.lib.mixins.NDArrayOperatorsMixin):
     def __complex__(self):
         return complex(self._array)
 
-    def __array__(self, dtype=None):
+    def __array__(self, dtype=None, copy=None):
         """Convert to an numpy array.
 
         This function returns the bare array without annotations. This function does not
@@ -576,7 +576,7 @@ class AnnotatedArray(np.lib.mixins.NDArrayOperatorsMixin):
         Args:
             dtype (optional): Type of the returned array.
         """
-        return np.asarray(self._array, dtype=dtype)
+        return np.asarray(self._array, dtype=dtype, copy=copy)
 
     @property
     def ann(self):
