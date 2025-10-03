@@ -16,7 +16,7 @@ def generate_bessel(function):
             lambda vx: function(*vx),
             x,
             (v, x),
-            vectorized=True,
+            vmap_method="legacy_vectorized",
         )
         return jnp.where(mask, 0, res)
 
